@@ -1,0 +1,41 @@
+INVARIANTES DE REPRESENTACION (IREP)
+
+TAD Billetera (Sistema Central)
+
+IREP(b: Billetera) : booleano
+IREP(b) ≡
+b.usuarios ≠ null AND
+b.empresas ≠ null AND
+b.operacionesGlobales ≠ null AND
+(∀ dni ∈ b.usuarios.keys() ⟹ b.usuarios.get(dni).getDni() == dni) AND
+(∀ cuit ∈ b.empresas.keys() ⟹ b.empresas.get(cuit).getCuit() == cuit) AND
+(∀ id ∈ b.operacionesGlobales.keys() ⟹ b.operacionesGlobales.get(id).getId() == id)
+
+Justificación:
+El sistema es válido si sus diccionarios están inicializados y si cada clave de acceso (DNI, CUIT, ID de operación) coincide exactamente con el identificador interno del objeto almacenado, garantizando búsquedas consistentes en O(1).
+
+TAD Usuario
+
+IREP(u: Usuario) : booleano
+IREP(u) ≡
+u.dni ≠ null AND u.dni ≠ "" AND
+u.nombre ≠ null AND u.nombre ≠ "" AND
+u.cuentas ≠ null AND
+(∀ cvu ∈ u.cuentas.keys() ⟹ u.cuentas.get(cvu).getCvu() == cvu)
+
+Justificación:
+Un usuario es consistente si posee sus datos identificatorios obligatorios y si su diccionario de cuentas está inicializado. Además, la clave de mapeo en su diccionario debe ser estrictamente igual al CVU de la instancia de la cuenta almacenada.
+
+TAD Cuenta (Clase Abstracta)
+
+IREP(c: Cuenta) : booleano
+IREP(c) ≡
+c.cvu ≠ null AND c.cvu ≠ "" AND
+c.alias ≠ null AND c.alias ≠ "" AND
+c.operaciones ≠ null AND
+(∀ id ∈ c.operaciones.keys() ⟹ c.operaciones.get(id).getId() == id)
+
+Justificación:
+Una cuenta es válida si posee un CVU y alias definidos, su colección de operaciones inicializada, y asegura que todas las operaciones registradas en su historial se encuentran indexadas correctamente por su ID único.
+
+

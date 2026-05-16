@@ -1,0 +1,36 @@
+package ar.edu.ungs.billetera;
+
+public abstract class Operacion {
+    private String id;
+    protected double monto;
+    private String fecha;
+
+    public Operacion(String id, double monto, String fecha) {
+        this.id = id;
+        this.monto = monto;
+        this.fecha = fecha;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public double getMonto() {
+        return monto;
+    }
+
+    public String getFecha() {
+        return fecha;
+    }
+
+    // Método abstracto para polimorfismo
+    public abstract String obtenerTipo();
+
+    public String obtenerDetalle() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(obtenerTipo()).append(" | ID: ").append(id)
+          .append(" | Monto: $").append(monto)
+          .append(" | Fecha: ").append(fecha);
+        return sb.toString();
+    }
+}
