@@ -2,80 +2,79 @@ ANÁLISIS DE COMPLEJIDAD ASINTÓTICA (ÁLGEBRA DE ÓRDENES)
 
 Método bajo análisis: realizarTransferencia
 
-Código fuente analizado
+Código fuente analizado:
 
 // Método auxiliar interviniente en la clase Billetera:
 private Cuenta encontrarCuentaPorCvu(String cvu) {
-for (Usuario u : usuarios.values()) {               // O(U) - Donde U es la cantidad de usuarios
-Cuenta c = u.buscarCuenta(cvu);                 // O(1) - Búsqueda en HashMap por clave (CVU)
-if (c != null) {                                // O(1)
-return c;                                   // O(1)
-}
-}
-return null;                                        // O(1)
+    return cuentasPorCvu.get(cvu);                      // O(1) - Búsqueda directa en HashMap por clave (CVU)
 }
 
 // Método principal en la clase Billetera:
 @Override
 public void realizarTransferencia(String cvuOrigen, String cvuDestino, double monto) {
-if (cvuOrigen.equals(cvuDestino)) {                 // O(1) - Comparación de cadenas
-throw new IllegalArgumentException(...);        // O(1)
+    if (cvuOrigen.equals(cvuDestino)) {                 // O(1) - Comparación de cadenas
+        throw new IllegalArgumentException(...);        // O(1)
+    }
+
+    Cuenta origen = encontrarCuentaPorCvu(cvuOrigen);   // O(1) - Invocación al método auxiliar
+    Cuenta destino = encontrarCuentaPorCvu(cvuDestino); // O(1) - Invocación al método auxiliar
+
+    if (origen == null || destino == null) {            // O(1) - Operación lógica
+        throw new IllegalArgumentException(...);        // O(1)
+    }
+
+    String idOperacion = "TR-" + ...;                   // O(1) - Concatenación
+    String fechaActual = Utilitarios.hoy()...;          // O(1) - Consulta de fecha
+    Transferencia transf = new Transferencia(...);      // O(1) - Instanciación de objeto
+
+    try {
+        origen.validarOperacion(monto);                 // O(1) - Polimorfismo, operaciones lógicas simples
+        origen.extraer(monto);                          // O(1) - Resta aritmética y asignación
+        destino.depositar(monto);                       // O(1) - Suma aritmética y asignación
+        transf.setAprobada(true);                       // O(1) - Asignación de estado
+    } catch (Exception e) {
+        transf.setAprobada(false);                      // O(1) - Asignación de estado
+        origen.registrarOperacion(transf);              // O(1) - Inserción (.put) en HashMap de la cuenta
+        destino.registrarOperacion(transf);             // O(1) - Inserción (.put) en HashMap de la cuenta
+        operacionesGlobales.put(idOperacion, transf);   // O(1) - Inserción (.put) en HashMap global
+        throw new IllegalArgumentException(e.getMessage());
+    }
+
+    origen.registrarOperacion(transf);                  // O(1) - Inserción (.put) en HashMap de la cuenta
+    destino.registrarOperacion(transf);                 // O(1) - Inserción (.put) en HashMap de la cuenta
+    operacionesGlobales.put(idOperacion, transf);       // O(1) - Inserción (.put) en HashMap global
 }
 
-Cuenta origen = encontrarCuentaPorCvu(cvuOrigen);   // O(U) - Invocación al método auxiliar
-Cuenta destino = encontrarCuentaPorCvu(cvuDestino); // O(U) - Invocación al método auxiliar
-
-if (origen == null || destino == null) {            // O(1)
-    throw new IllegalArgumentException(...);        // O(1)
-}
-
-try {
-    origen.validarOperacion(monto);                 // O(1) - Polimorfismo, operaciones lógicas simples
-    
-    origen.extraer(monto);                          // O(1) - Resta aritmética y asignación
-    destino.depositar(monto);                       // O(1) - Suma aritmética y asignación
-    
-    String idOperacion = "TR-" + ...;               // O(1) - Concatenación simple
-    String fechaActual = Utilitarios.hoy()...;      // O(1) - Consulta de fecha de la cátedra
-    
-    Transferencia transf = new Transferencia(...);  // O(1) - Instanciación de objeto
-    
-    origen.registrarOperacion(transf);              // O(1) - Inserción (.put) en HashMap de la cuenta
-    destino.registrarOperacion(transf);             // O(1) - Inserción (.put) en HashMap de la cuenta
-    operacionesGlobales.put(idOperacion, transf);   // O(1) - Inserción (.put) en HashMap global
-    
-} catch (Exception e) {
-    throw new IllegalArgumentException(e.getMessage());
-}
-}
+================================================================================
 
 Justificación paso a paso (Defensa para la Cátedra)
 
 Para determinar el costo temporal T(n) del método realizarTransferencia, se aplica el álgebra de órdenes sobre sus bloques secuenciales:
 
 A. Análisis del método auxiliar 'encontrarCuentaPorCvu':
-El algoritmo debe buscar una cuenta por su CVU de forma global, pero la estructura del sistema agrupa las cuentas dentro de cada objeto Usuario. Por lo tanto, el ciclo for-each debe recorrer la colección de usuarios registrados. Sea 'U' la cantidad total de usuarios en el sistema. Dentro del ciclo, la instrucción 'u.buscarCuenta(cvu)' accede al diccionario interno de cada usuario (un HashMap que indexa sus cuentas por CVU), lo cual tiene un costo constante promedio de O(1).
-En el peor escenario (que la cuenta no exista o pertenezca al último usuario del mapa), el bucle se ejecutará 'U' veces.
-Complejidad del método auxiliar: O(U) * O(1) = O(U)
+El sistema dispone de un diccionario global (Map<String, Cuenta> cuentasPorCvu) que indexa todas las cuentas creadas utilizando su CVU como clave única. La implementación de HashMap en Java permite acceder a un elemento a partir de su clave mediante una función hash interna en tiempo constante promedio. De este modo, la instrucción 'cuentasPorCvu.get(cvu)' realiza un acceso directo que prescinde de ciclos iterativos y tiene un costo de ejecución de O(1).
+Complejidad del método auxiliar: O(1)
 
 B. Análisis de las búsquedas en 'realizarTransferencia':
 El flujo principal invoca el método auxiliar dos veces consecutivas (una para la cuenta de origen y otra para la de destino):
-T(búsquedas) = O(U) + O(U) = O(2U)
-Por las propiedades del álgebra de órdenes, las constantes multiplicativas se descartan en el análisis asintótico, por lo que el costo de las búsquedas se reduce a O(U).
+T(búsquedas) = O(1) + O(1) = O(2)
+Por las propiedades del álgebra de órdenes, las constantes multiplicativas se absorben en el análisis asintótico, por lo que el costo total de las búsquedas se mantiene estrictamente constante: O(1).
 
-C. Análisis del bloque transaccional (Bloque try):
-Todas las instrucciones de validación, actualización de saldos e instanciación de la operación ejecutan operaciones aritméticas y asignaciones directas de costo constante O(1).
-Finalmente, el registro del objeto Transferencia se realiza mediante tres operaciones '.put()' en sus respectivos diccionarios basados en tablas de hash (el historial de origen, el de destino y el mapa global del sistema). Al ser estructuras HashMap, la inserción por clave tiene un tiempo de ejecución promedio de O(1).
+C. Análisis del bloque transaccional:
+Todas las instrucciones de validación polimórfica, actualización de saldos, consultas de fecha de la cátedra e instanciación de objetos ejecutan operaciones lógicas, asignaciones y cálculos aritméticos directos de costo constante O(1).
+El registro del objeto Transferencia en las colecciones se realiza mediante operaciones '.put()' en sus respectivos diccionarios basados en tablas de hash (el historial de la cuenta origen, el de la cuenta destino y el mapa global de operaciones del sistema). Al tratarse de estructuras HashMap, el costo de inserción por clave es constante promedio.
 Complejidad del bloque de transacciones: O(1) + O(1) + ... + O(1) = O(1)
+
+================================================================================
 
 Conclusión y Cálculo Final
 
 El costo temporal total de la operación es la suma de sus partes secuenciales:
 
 T_Total = T(búsquedas) + T(transacción)
-T_Total = O(U) + O(1)
+T_Total = O(1) + O(1)
 
-Aplicando la regla de la suma en el álgebra de órdenes, el término de mayor orden (el comportamiento lineal) domina sobre el término constante.
+Aplicando la regla de la suma en el álgebra de órdenes, la combinación de múltiples complejidades constantes da como resultado un tiempo constante definitivo.
 
-Complejidad Final del Método: O(U)
-(Donde 'U' representa la cantidad total de usuarios registrados en la plataforma).
+Complejidad Final del Método: O(1)
+(El tiempo de ejecución de la transferencia es eficiente y completamente independiente de la cantidad total de usuarios o cuentas registradas en la plataforma, cumpliendo con los estándares de diseño óptimo exigidos).

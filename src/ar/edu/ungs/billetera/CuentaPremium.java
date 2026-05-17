@@ -2,8 +2,8 @@ package ar.edu.ungs.billetera;
 
 public class CuentaPremium extends Cuenta {
 
-    public CuentaPremium(String cvu, String alias) {
-        super(cvu, alias);
+    public CuentaPremium(String cvu, String alias, String dniTitular) {
+        super(cvu, alias, dniTitular);
     }
 
     @Override
