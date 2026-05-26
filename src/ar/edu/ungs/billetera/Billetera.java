@@ -2,6 +2,7 @@ package ar.edu.ungs.billetera;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
@@ -9,11 +10,12 @@ import java.util.Comparator;
 
 public class Billetera implements IBilletera {
     
+    // Diccionarios globales
     private Map<String, Usuario> usuarios;
     private Map<String, Empresa> empresas;
     private Map<String, Operacion> operacionesGlobales;
-    private Map<String, Cuenta> cuentasPorCvu;
-    private Map<String, String> aliasACvu;
+    
+    // Relación auxiliar de autorizados: Clave: CUIT de la empresa, Valor: Lista de DNIs
     private Map<String, List<String>> autorizadosPorEmpresa;
 
     public Billetera() {
@@ -21,9 +23,11 @@ public class Billetera implements IBilletera {
         this.empresas = new HashMap<>();
         this.operacionesGlobales = new HashMap<>();
         this.autorizadosPorEmpresa = new HashMap<>();
-        this.cuentasPorCvu = new HashMap<>();
-        this.aliasACvu = new HashMap<>();
     }
+
+    // ==========================================
+    // 1. REGISTROS
+    // ==========================================
 
     @Override
     public void registrarUsuario(String dni, String nombre, String telefono, String email) {
@@ -33,7 +37,7 @@ public class Billetera implements IBilletera {
         if (usuarios.containsKey(dni)) {
             throw new IllegalArgumentException("El usuario con DNI " + dni + " ya se encuentra registrado.");
         }
-        Usuario nuevoUsuario = new Usuario(dni, nombre, telefono, email);
+        Usuario nuevoUsuario = new Usuario(dni, nombre, "");
         usuarios.put(dni, nuevoUsuario);
     }
 
@@ -65,21 +69,20 @@ public class Billetera implements IBilletera {
         autorizados.add(dniAutorizado);
     }
 
+    // ==========================================
+    // 2. CREACIÓN DE CUENTAS
+    // ==========================================
+
     @Override
     public String crearCuentaRegular(String dniUsuario, String alias) {
         if (!usuarios.containsKey(dniUsuario)) {
             throw new IllegalArgumentException("El usuario no está registrado.");
         }
-        if (aliasACvu.containsKey(alias)) {
-            throw new IllegalArgumentException("Alias ya existe");
-        }
         
         Usuario u = usuarios.get(dniUsuario);
         String cvu = Utilitarios.generarSiguienteCvu();
         
-        CuentaRegular nuevaCuenta = new CuentaRegular(cvu, alias, dniUsuario);
-        aliasACvu.put(alias, cvu);
-        cuentasPorCvu.put(cvu, nuevaCuenta);
+        CuentaRegular nuevaCuenta = new CuentaRegular(cvu, alias);
         u.agregarCuenta(nuevaCuenta);
         
         return cvu;
@@ -90,20 +93,16 @@ public class Billetera implements IBilletera {
         if (!usuarios.containsKey(dniUsuario)) {
             throw new IllegalArgumentException("El usuario no está registrado.");
         }
+        // Validación de monto mínimo descubierta en el archivo de prueba
         if (depositoInicial < 500000) {
             throw new IllegalArgumentException("El depósito inicial no cumple con el mínimo requerido para Cuenta Premium.");
-        }
-        if (aliasACvu.containsKey(alias)) {
-            throw new IllegalArgumentException("Alias ya existe");
         }
         
         Usuario u = usuarios.get(dniUsuario);
         String cvu = Utilitarios.generarSiguienteCvu();
         
-        CuentaPremium nuevaCuenta = new CuentaPremium(cvu, alias, dniUsuario);
+        CuentaPremium nuevaCuenta = new CuentaPremium(cvu, alias);
         nuevaCuenta.depositar(depositoInicial);
-        cuentasPorCvu.put(cvu, nuevaCuenta);
-        aliasACvu.put(alias, cvu);
         u.agregarCuenta(nuevaCuenta);
         
         return cvu;
@@ -122,21 +121,20 @@ public class Billetera implements IBilletera {
         if (!autorizados.contains(dniUsuario)) {
             throw new IllegalArgumentException("El usuario no está autorizado para esta empresa.");
         }
-        if (aliasACvu.containsKey(alias)) {
-            throw new IllegalArgumentException("Alias ya existe");
-        }
         
         Usuario u = usuarios.get(dniUsuario);
         Empresa emp = empresas.get(cuitEmpresa);
         String cvu = Utilitarios.generarSiguienteCvu();
         
-        CuentaCorporativa nuevaCuenta = new CuentaCorporativa(cvu, alias, dniUsuario, emp);
+        CuentaCorporativa nuevaCuenta = new CuentaCorporativa(cvu, alias, emp);
         u.agregarCuenta(nuevaCuenta);
-        aliasACvu.put(alias, cvu);
-        cuentasPorCvu.put(cvu, nuevaCuenta);
         
         return cvu;
     }
+
+    // ==========================================
+    // 3. OPERACIONES TRANSACCIONALES
+    // ==========================================
 
     @Override
     public void realizarTransferencia(String cvuOrigen, String cvuDestino, double monto) {
@@ -151,27 +149,24 @@ public class Billetera implements IBilletera {
             throw new IllegalArgumentException("La cuenta de origen o destino no existe.");
         }
         
-        String idOperacion = "TR-" + (operacionesGlobales.size() + 1);
-        String fechaActual = Utilitarios.hoy().toString();
-
-        Transferencia transf = new Transferencia(idOperacion, monto, fechaActual, origen, destino);
-
         try {
             origen.validarOperacion(monto);
+            
             origen.extraer(monto);
             destino.depositar(monto);
-            transf.setAprobada(true);
-        } catch (Exception e) {
-            transf.setAprobada(false);
+            
+            String idOperacion = "TR-" + (operacionesGlobales.size() + 1);
+            String fechaActual = Utilitarios.hoy().toString();
+            
+            Transferencia transf = new Transferencia(idOperacion, monto, fechaActual, origen, destino);
+            
             origen.registrarOperacion(transf);
             destino.registrarOperacion(transf);
             operacionesGlobales.put(idOperacion, transf);
+            
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
-
-        origen.registrarOperacion(transf);
-        destino.registrarOperacion(transf);
-        operacionesGlobales.put(idOperacion, transf);
     }
 
     @Override
@@ -185,8 +180,7 @@ public class Billetera implements IBilletera {
             String idOperacion = String.valueOf(idNumerico);
             String fecha = Utilitarios.hoy().toString();
             
-            RentaFija inv = new RentaFija(idOperacion, monto, fecha, plazoDias, "Renta Fija", 0.40, cuenta);
-            inv.setAprobada(true);
+            RentaFija inv = new RentaFija(idOperacion, monto, fecha, plazoDias, "Renta Fija", 0.40);
             
             cuenta.registrarOperacion(inv);
             operacionesGlobales.put(idOperacion, inv);
@@ -208,8 +202,7 @@ public class Billetera implements IBilletera {
             String idOperacion = String.valueOf(idNumerico);
             String fecha = Utilitarios.hoy().toString();
             
-            Divisa inv = new Divisa(idOperacion, monto, fecha, plazoDias, "Divisa", divisa, tasa, cuenta);
-            inv.setAprobada(true);
+            Divisa inv = new Divisa(idOperacion, monto, fecha, plazoDias, "Divisa", divisa, tasa);
             
             cuenta.registrarOperacion(inv);
             operacionesGlobales.put(idOperacion, inv);
@@ -222,6 +215,7 @@ public class Billetera implements IBilletera {
 
     @Override
     public int realizarInversionLiquidez(String dni, String cvu, double monto, int plazoDias) {
+        // Validación de monto mínimo de 20M descubierta en el archivo de prueba
         if (monto < 20000000) {
             throw new IllegalArgumentException("El Fondo de Liquidez requiere un monto mínimo de $20.000.000.");
         }
@@ -235,8 +229,7 @@ public class Billetera implements IBilletera {
             String idOperacion = String.valueOf(idNumerico);
             String fecha = Utilitarios.hoy().toString();
             
-            FondoEmpresarial inv = new FondoEmpresarial(idOperacion, monto, fecha, plazoDias, "Liquidez", cuenta);
-            inv.setAprobada(true);
+            FondoEmpresarial inv = new FondoEmpresarial(idOperacion, monto, fecha, plazoDias, "Liquidez");
             
             cuenta.registrarOperacion(inv);
             operacionesGlobales.put(idOperacion, inv);
@@ -262,25 +255,27 @@ public class Billetera implements IBilletera {
             if (inv.esPrecancelado()) {
                 throw new IllegalArgumentException("La inversión ya se encuentra precancelada.");
             }
-            if (!inv.esPrecancelable()) {
-                throw new IllegalArgumentException("La inversión no es precancelable.");
-            }
-            
-            double interesesTotales = inv.calcularResultado();
             inv.precancelar();
-            double resultado = interesesTotales / 2;
-            cuenta.depositar(inv.getMonto() + resultado);
+            cuenta.depositar(inv.getMonto()); // Devolución del capital original
         } else {
             throw new IllegalArgumentException("El ID corresponde a una transferencia, no a una inversión.");
         }
     }
 
+    // ==========================================
+    // 4. CONSULTAS E HISTORIALES
+    // ==========================================
+
     @Override
     public String consultarCvu(String alias) {
-        if (!aliasACvu.containsKey(alias)) {
-            throw new IllegalArgumentException("El alias no existe.");
+        for (Usuario u : usuarios.values()) {
+            for (Cuenta c : u.getCuentas().values()) {
+                if (c.getAlias().equals(alias)) {
+                    return c.getCvu();
+                }
+            }
         }
-        return aliasACvu.get(alias);
+        throw new IllegalArgumentException("El alias '" + alias + "' no está registrado.");
     }
 
     @Override
@@ -414,8 +409,18 @@ public class Billetera implements IBilletera {
         return resultado;
     }
 
+    // ==========================================
+    // 5. MÉTODOS AUXILIARES
+    // ==========================================
+
     private Cuenta encontrarCuentaPorCvu(String cvu) {
-        return cuentasPorCvu.get(cvu);
+        for (Usuario u : usuarios.values()) {
+            Cuenta c = u.buscarCuenta(cvu);
+            if (c != null) {
+                return c;
+            }
+        }
+        return null;
     }
 
     private Cuenta validarCuentaDeUsuario(String dni, String cvu) {
@@ -428,6 +433,54 @@ public class Billetera implements IBilletera {
             throw new IllegalArgumentException("La cuenta con CVU " + cvu + " no pertenece al usuario.");
         }
         return c;
+    }
+    public void procesarInversionesQueFinalizanHoy() { //Punto15//
+
+        for (Operacion op : operacionesGlobales.values()) {
+
+            if (op instanceof Inversion) {
+
+                Inversion inv = (Inversion) op;
+
+                if (inv.esPrecancelado()) {
+                    continue;
+                }
+
+                LocalDate fechaConstitucion =
+                        LocalDate.parse(inv.getFecha());
+
+                LocalDate fechaVencimiento =
+                        fechaConstitucion.plusDays(
+                                inv.plazo
+                        );
+
+                if (fechaVencimiento.equals(Utilitarios.hoy())) {
+
+                    for (Usuario u : usuarios.values()) {
+
+                        for (Cuenta cuenta :
+                                u.getCuentas().values()) {
+
+                            if (cuenta.getOperaciones()
+                                       .containsKey(inv.getId())) {
+
+                                double resultado =
+                                        inv.calcularResultado();
+
+                                double montoFinal =
+                                        inv.getMonto() + resultado;
+
+                                cuenta.depositar(montoFinal);
+
+                                inv.precancelar();
+
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override

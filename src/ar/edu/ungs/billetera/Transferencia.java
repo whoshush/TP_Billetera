@@ -17,13 +17,10 @@ public class Transferencia extends Operacion {
 
     @Override
     public String obtenerDetalle() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Transferencia:\n")
-          .append("fecha: ").append(getFecha()).append("\n")
-          .append("origen: ").append(origen.getDni()).append(" (").append(origen.getCvu()).append(")\n")
-          .append("destino: ").append(destino.getDni()).append(" (").append(destino.getCvu()).append(")\n")
-          .append("monto: ").append(getMonto()).append("\n")
-          .append(isAprobada() ? "[Aprobado]" : "[Rechazado]");
+        // Aprovechamos el StringBuilder requerido
+        StringBuilder sb = new StringBuilder(super.obtenerDetalle());
+        sb.append(" | Origen CVU: ").append(origen.getCvu())
+          .append(" | Destino CVU: ").append(destino.getCvu());
         return sb.toString();
     }
 }
