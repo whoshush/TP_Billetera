@@ -6,13 +6,15 @@ import java.util.Map;
 public abstract class Cuenta {
     private String cvu;
     private String alias;
-    protected double saldo; // Se utiliza double para la compatibilidad con montos e intereses financieros
+    protected double saldo; 
     private Map<String, Operacion> operaciones;
+    private String dniTitular;
 
-    public Cuenta(String cvu, String alias) {
+    public Cuenta(String cvu, String alias, String dniTitular) {
         this.cvu = cvu;
         this.alias = alias;
         this.saldo = 0.0;
+        this.dniTitular = dniTitular;
         this.operaciones = new HashMap<>();
     }
 
@@ -22,6 +24,10 @@ public abstract class Cuenta {
 
     public String getAlias() {
         return alias;
+    }
+
+    public String getDni() {
+        return dniTitular;
     }
 
     public double obtenerSaldo() {
@@ -36,7 +42,6 @@ public abstract class Cuenta {
         return operaciones;
     }
 
-    // Métodos para modificar el saldo desde los procesos controlados del sistema
     public void depositar(double monto) {
         this.saldo += monto;
     }
@@ -45,7 +50,6 @@ public abstract class Cuenta {
         this.saldo -= monto;
     }
 
-    // Método polimórfico que cada subclase implementará según sus reglas
     public abstract void validarOperacion(double monto) throws Exception;
 
     public String obtenerDetalle() {

@@ -3,8 +3,8 @@ package ar.edu.ungs.billetera;
 public class CuentaCorporativa extends Cuenta {
     private Empresa empresaAsociada;
 
-    public CuentaCorporativa(String cvu, String alias, Empresa empresaAsociada) {
-        super(cvu, alias);
+    public CuentaCorporativa(String cvu, String alias, String dniTitular, Empresa empresaAsociada) {
+        super(cvu, alias, dniTitular);
         this.empresaAsociada = empresaAsociada;
     }
 
