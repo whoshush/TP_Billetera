@@ -8,8 +8,12 @@ public class FondoEmpresarial extends Inversion {
 
     @Override
     public double calcularResultado() {
-        if (esPrecancelado()) return 0;
-        return getMonto() * 0.08 * Utilitarios.consultarCotizacion("FLE");
+        int dias = getDiasTranscurridos();
+        double ganancia = getMonto() * (0.08 / 365) * dias;
+        if (esPrecancelado()) {
+            return ganancia / 2;
+        }
+        return ganancia;
     }
 
     @Override

@@ -1,3 +1,4 @@
+// Operacion.java
 package ar.edu.ungs.billetera;
 
 public abstract class Operacion {
@@ -41,5 +42,10 @@ public abstract class Operacion {
           .append(" | Monto: $").append(monto)
           .append(" | Fecha: ").append(fecha);
         return sb.toString();
+    }
+
+    @Override
+    public String toString() {
+        return obtenerDetalle();
     }
 }

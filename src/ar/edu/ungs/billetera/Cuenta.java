@@ -59,4 +59,9 @@ public abstract class Cuenta {
           .append(" | Saldo: $").append(saldo);
         return sb.toString();
     }
+
+    @Override
+    public String toString() {
+        return obtenerDetalle();
+    }
 }

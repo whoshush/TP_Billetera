@@ -16,4 +16,9 @@ public class Empresa {
     public String getRazonSocial() {
         return razonSocial;
     }
+
+    @Override
+    public String toString() {
+        return "Empresa: " + razonSocial + " (CUIT: " + cuit + ")";
+    }
 }

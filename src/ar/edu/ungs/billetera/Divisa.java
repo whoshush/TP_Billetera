@@ -3,17 +3,30 @@ package ar.edu.ungs.billetera;
 public class Divisa extends Inversion {
     private String monedaReferencia;
     private double tasa;
+    private double cotizacionInicial;
 
     public Divisa(String id, double monto, String fecha, int plazo, String tipo, String monedaReferencia, double tasa, Cuenta origen) {
         super(id, monto, fecha, plazo, tipo, origen);
         this.monedaReferencia = monedaReferencia;
         this.tasa = tasa;
+        this.cotizacionInicial = Utilitarios.consultarCotizacion(monedaReferencia);
     }
 
     @Override
     public double calcularResultado() {
-        if (esPrecancelado()) return 0;
+        int dias = getDiasTranscurridos();
         double cotizacionActual = Utilitarios.consultarCotizacion(monedaReferencia);
-        return (getMonto() * tasa * getPlazo()) * cotizacionActual;
+        
+        double divisasCompradas = getMonto() / cotizacionInicial;
+        double interesesEnDivisas = divisasCompradas * (tasa / 365) * dias;
+        
+        if (esPrecancelado()) {
+            interesesEnDivisas /= 2;
+        }
+        
+        double gananciaCapitalPesos = (divisasCompradas * cotizacionActual) - getMonto();
+        double gananciaInteresesPesos = interesesEnDivisas * cotizacionActual;
+        
+        return gananciaCapitalPesos + gananciaInteresesPesos;
     }
 }

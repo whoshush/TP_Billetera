@@ -57,4 +57,9 @@ public class Usuario {
           .append(" - Email: ").append(email);
         return sb.toString();
     }
+
+    @Override
+    public String toString() {
+        return obtenerDetalle();
+    }
 }

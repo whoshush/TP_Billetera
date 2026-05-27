@@ -143,6 +143,9 @@ public class Billetera implements IBilletera {
         if (cvuOrigen.equals(cvuDestino)) {
             throw new IllegalArgumentException("No se puede transferir a la misma cuenta.");
         }
+        if (monto <= 0) {
+            throw new IllegalArgumentException("El monto debe ser positivo.");
+        }
         
         Cuenta origen = encontrarCuentaPorCvu(cvuOrigen);
         Cuenta destino = encontrarCuentaPorCvu(cvuDestino);
@@ -166,6 +169,9 @@ public class Billetera implements IBilletera {
             origen.registrarOperacion(transf);
             destino.registrarOperacion(transf);
             operacionesGlobales.put(idOperacion, transf);
+            if (e instanceof IllegalStateException) {
+                throw (IllegalStateException) e;
+            }
             throw new IllegalArgumentException(e.getMessage());
         }
 
@@ -176,6 +182,9 @@ public class Billetera implements IBilletera {
 
     @Override
     public int realizarInversionRentaFija(String dni, String cvu, double monto, int plazoDias) {
+        if (plazoDias <= 0) {
+            throw new IllegalArgumentException("El plazo debe ser mayor a cero.");
+        }
         Cuenta cuenta = validarCuentaDeUsuario(dni, cvu);
         try {
             cuenta.validarOperacion(monto);
@@ -185,7 +194,7 @@ public class Billetera implements IBilletera {
             String idOperacion = String.valueOf(idNumerico);
             String fecha = Utilitarios.hoy().toString();
             
-            RentaFija inv = new RentaFija(idOperacion, monto, fecha, plazoDias, "Renta Fija", 0.40, cuenta);
+            RentaFija inv = new RentaFija(idOperacion, monto, fecha, plazoDias, "Renta Fija", 0.20, cuenta);
             inv.setAprobada(true);
             
             cuenta.registrarOperacion(inv);
@@ -199,6 +208,9 @@ public class Billetera implements IBilletera {
 
     @Override
     public int realizarInversionDivisa(String dni, String cvu, double monto, int plazoDias, String divisa, double tasa) {
+        if (plazoDias <= 0) {
+            throw new IllegalArgumentException("El plazo debe ser mayor a cero.");
+        }
         Cuenta cuenta = validarCuentaDeUsuario(dni, cvu);
         try {
             cuenta.validarOperacion(monto);
@@ -222,11 +234,15 @@ public class Billetera implements IBilletera {
 
     @Override
     public int realizarInversionLiquidez(String dni, String cvu, double monto, int plazoDias) {
-        if (monto < 20000000) {
-            throw new IllegalArgumentException("El Fondo de Liquidez requiere un monto mínimo de $20.000.000.");
+        if (plazoDias <= 0) {
+            throw new IllegalArgumentException("El plazo debe ser mayor a cero.");
         }
         
         Cuenta cuenta = validarCuentaDeUsuario(dni, cvu);
+        if (!(cuenta instanceof CuentaCorporativa)) {
+            throw new IllegalArgumentException("Solo las cuentas corporativas pueden invertir en el Fondo de Liquidez.");
+        }
+
         try {
             cuenta.validarOperacion(monto);
             cuenta.extraer(monto);
@@ -266,10 +282,9 @@ public class Billetera implements IBilletera {
                 throw new IllegalArgumentException("La inversión no es precancelable.");
             }
             
-            double interesesTotales = inv.calcularResultado();
             inv.precancelar();
-            double resultado = interesesTotales / 2;
-            cuenta.depositar(inv.getMonto() + resultado);
+            double gananciaFinal = inv.calcularResultado();
+            cuenta.depositar(inv.getMonto() + gananciaFinal);
         } else {
             throw new IllegalArgumentException("El ID corresponde a una transferencia, no a una inversión.");
         }
@@ -433,10 +448,22 @@ public class Billetera implements IBilletera {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("=== ESTADO DE BILLETE.AR ===\n")
-          .append("Usuarios registrados: ").append(usuarios.size()).append("\n")
-          .append("Empresas registradas: ").append(empresas.size()).append("\n")
-          .append("Operaciones totales: ").append(operacionesGlobales.size()).append("\n");
+        sb.append("=== ESTADO INTERNO DE BILLETE.AR ===\n\n");
+        
+        sb.append("--- USUARIOS REGISTRADOS ---\n");
+        for (Usuario u : usuarios.values()) {
+            sb.append(u.toString()).append("\n");
+        }
+        
+        sb.append("\n--- EMPRESAS REGISTRADAS ---\n");
+        for (Empresa e : empresas.values()) {
+            sb.append(e.toString()).append("\n");
+        }
+        
+        sb.append("\n--- OPERACIONES TOTALES ---\n");
+        sb.append(operacionesGlobales.size()).append(" operaciones registradas.\n");
+        
+        sb.append("\n=== FIN DEL ESTADO ===");
         return sb.toString();
     }
 }

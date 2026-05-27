@@ -1,5 +1,8 @@
 package ar.edu.ungs.billetera;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+
 public abstract class Inversion extends Operacion {
     protected int plazo;
     private String tipo;
@@ -34,6 +37,17 @@ public abstract class Inversion extends Operacion {
         return origen;
     }
 
+    protected int getDiasTranscurridos() {
+        LocalDate fechaInicio = LocalDate.parse(getFecha());
+        LocalDate hoy = Utilitarios.hoy();
+        long dias = ChronoUnit.DAYS.between(fechaInicio, hoy);
+        
+        if (dias > plazo) {
+            dias = plazo;
+        }
+        return (int) Math.max(0, dias);
+    }
+
     public abstract double calcularResultado();
 
     @Override
@@ -52,5 +66,10 @@ public abstract class Inversion extends Operacion {
           .append("plazo: ").append(plazo).append("\n")
           .append(isAprobada() ? "[Aprobado]" : "[Rechazado]");
         return sb.toString();
+    }
+
+    @Override
+    public String toString() {
+        return obtenerDetalle();
     }
 }

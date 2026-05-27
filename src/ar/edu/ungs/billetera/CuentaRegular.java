@@ -15,4 +15,12 @@ public class CuentaRegular extends Cuenta {
             throw new Exception("Saldo insuficiente para realizar la operación.");
         }
     }
+
+    @Override
+    public void depositar(double monto) {
+        if (monto > 5000000) {
+            throw new IllegalStateException("Las cuentas regulares no pueden recibir transferencias mayores a 5.000.000");
+        }
+        super.depositar(monto);
+    }
 }

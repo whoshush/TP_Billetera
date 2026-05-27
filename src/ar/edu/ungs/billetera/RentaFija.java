@@ -10,7 +10,13 @@ public class RentaFija extends Inversion {
 
     @Override
     public double calcularResultado() {
-        if (esPrecancelado()) return 0;
-        return getMonto() * tasaInteres * getPlazo();
+        int dias = getDiasTranscurridos();
+        double ganancia = getMonto() * (tasaInteres / 365) * dias;
+        
+        if (esPrecancelado()) {
+            return ganancia / 2;
+        }
+        
+        return ganancia;
     }
 }
