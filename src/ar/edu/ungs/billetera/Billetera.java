@@ -237,6 +237,9 @@ public class Billetera implements IBilletera {
         if (plazoDias <= 0) {
             throw new IllegalArgumentException("El plazo debe ser mayor a cero.");
         }
+        if (monto < 20000000) {
+            throw new IllegalArgumentException("El Fondo de Liquidez requiere un monto mínimo de $20.000.000.");
+        }
         
         Cuenta cuenta = validarCuentaDeUsuario(dni, cvu);
         if (!(cuenta instanceof CuentaCorporativa)) {

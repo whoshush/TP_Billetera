@@ -18,8 +18,8 @@ public class CuentaRegular extends Cuenta {
 
     @Override
     public void depositar(double monto) {
-        if (monto > 5000000) {
-            throw new IllegalStateException("Las cuentas regulares no pueden recibir transferencias mayores a 5.000.000");
+        if (this.saldo + monto > 5000000) {
+            throw new IllegalStateException("El saldo de la cuenta regular no puede superar los $5.000.000.");
         }
         super.depositar(monto);
     }
