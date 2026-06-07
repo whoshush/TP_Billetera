@@ -1,80 +1,135 @@
 ANÁLISIS DE COMPLEJIDAD ASINTÓTICA (ÁLGEBRA DE ÓRDENES)
 
-Método bajo análisis: realizarTransferencia
+================================================================================
+Método bajo análisis: realizarTransferencia (flujo completo con delegación)
+================================================================================
 
 Código fuente analizado:
 
-// Método auxiliar interviniente en la clase Billetera:
-private Cuenta encontrarCuentaPorCvu(String cvu) {
-    return cuentasPorCvu.get(cvu);                      // O(1) - Búsqueda directa en HashMap por clave (CVU)
+// Búsqueda lineal de cuenta (sin mapa global en Billetera):
+public static Cuenta buscarCuentaEnSistema(Collection<Usuario> usuarios, String cvu) {
+    for (Usuario usuario : usuarios) {              // O(U)
+        Cuenta cuenta = usuario.buscarCuenta(cvu);    // O(1) - HashMap por CVU
+        if (cuenta != null) return cuenta;
+    }
+    return null;
 }
 
-// Método principal en la clase Billetera:
-@Override
+// Método principal en Billetera (fachada):
 public void realizarTransferencia(String cvuOrigen, String cvuDestino, double monto) {
-    if (cvuOrigen.equals(cvuDestino)) {                 // O(1) - Comparación de cadenas
-        throw new IllegalArgumentException(...);        // O(1)
-    }
+    // validaciones O(1) ...
+    Cuenta origen = buscarCuenta(cvuOrigen);          // O(U × C)
+    Cuenta destino = buscarCuenta(cvuDestino);        // O(U × C)
+    origen.realizarTransferencia(destino, monto, id, fecha, registro);
+}
 
-    Cuenta origen = encontrarCuentaPorCvu(cvuOrigen);   // O(1) - Invocación al método auxiliar
-    Cuenta destino = encontrarCuentaPorCvu(cvuDestino); // O(1) - Invocación al método auxiliar
-
-    if (origen == null || destino == null) {            // O(1) - Operación lógica
-        throw new IllegalArgumentException(...);        // O(1)
-    }
-
-    String idOperacion = "TR-" + ...;                   // O(1) - Concatenación
-    String fechaActual = Utilitarios.hoy()...;          // O(1) - Consulta de fecha
-    Transferencia transf = new Transferencia(...);      // O(1) - Instanciación de objeto
-
+// Lógica delegada en Cuenta:
+public void realizarTransferencia(Cuenta destino, double monto, String id, String fecha, RegistroOperaciones registro) {
     try {
-        origen.validarOperacion(monto);                 // O(1) - Polimorfismo, operaciones lógicas simples
-        origen.extraer(monto);                          // O(1) - Resta aritmética y asignación
-        destino.depositar(monto);                       // O(1) - Suma aritmética y asignación
-        transf.setAprobada(true);                       // O(1) - Asignación de estado
-    } catch (Exception e) {
-        transf.setAprobada(false);                      // O(1) - Asignación de estado
-        origen.registrarOperacion(transf);              // O(1) - Inserción (.put) en HashMap de la cuenta
-        destino.registrarOperacion(transf);             // O(1) - Inserción (.put) en HashMap de la cuenta
-        operacionesGlobales.put(idOperacion, transf);   // O(1) - Inserción (.put) en HashMap global
-        throw new IllegalArgumentException(e.getMessage());
+        validarOperacion(monto);                      // O(1) - polimorfismo
+        destino.validarDeposito(monto);               // O(1) - polimorfismo
+        extraer(monto);                               // O(1)
+        destino.depositar(monto);                     // O(1)
+        // crear Transferencia aprobada O(1)
+    } catch (...) {
+        // registrar rechazada en origen, destino y registro global: 3 × O(1)
     }
-
-    origen.registrarOperacion(transf);                  // O(1) - Inserción (.put) en HashMap de la cuenta
-    destino.registrarOperacion(transf);                 // O(1) - Inserción (.put) en HashMap de la cuenta
-    operacionesGlobales.put(idOperacion, transf);       // O(1) - Inserción (.put) en HashMap global
+    // registrar aprobada: 3 × O(1)
 }
 
 ================================================================================
-
-Justificación paso a paso (Defensa para la Cátedra)
-
-Para determinar el costo temporal T(n) del método realizarTransferencia, se aplica el álgebra de órdenes sobre sus bloques secuenciales:
-
-A. Análisis del método auxiliar 'encontrarCuentaPorCvu':
-El sistema dispone de un diccionario global (Map<String, Cuenta> cuentasPorCvu) que indexa todas las cuentas creadas utilizando su CVU como clave única. La implementación de HashMap en Java permite acceder a un elemento a partir de su clave mediante una función hash interna en tiempo constante promedio. De este modo, la instrucción 'cuentasPorCvu.get(cvu)' realiza un acceso directo que prescinde de ciclos iterativos y tiene un costo de ejecución de O(1).
-Complejidad del método auxiliar: O(1)
-
-B. Análisis de las búsquedas en 'realizarTransferencia':
-El flujo principal invoca el método auxiliar dos veces consecutivas (una para la cuenta de origen y otra para la de destino):
-T(búsquedas) = O(1) + O(1) = O(2)
-Por las propiedades del álgebra de órdenes, las constantes multiplicativas se absorben en el análisis asintótico, por lo que el costo total de las búsquedas se mantiene estrictamente constante: O(1).
-
-C. Análisis del bloque transaccional:
-Todas las instrucciones de validación polimórfica, actualización de saldos, consultas de fecha de la cátedra e instanciación de objetos ejecutan operaciones lógicas, asignaciones y cálculos aritméticos directos de costo constante O(1).
-El registro del objeto Transferencia en las colecciones se realiza mediante operaciones '.put()' en sus respectivos diccionarios basados en tablas de hash (el historial de la cuenta origen, el de la cuenta destino y el mapa global de operaciones del sistema). Al tratarse de estructuras HashMap, el costo de inserción por clave es constante promedio.
-Complejidad del bloque de transacciones: O(1) + O(1) + ... + O(1) = O(1)
-
+Análisis por subtipo: validarOperacion y validarDeposito
 ================================================================================
 
-Conclusión y Cálculo Final
+CuentaRegular.validarOperacion(monto):
+    - Comparación monto <= 0                          O(1)
+    - Comparación saldo < monto                         O(1)
+    Total: O(1)
 
-El costo temporal total de la operación es la suma de sus partes secuenciales:
+CuentaRegular.validarDeposito(monto):
+    - Comparación monto <= 0                            O(1)
+    - Comparación saldo + monto > 5_000_000             O(1)
+    Total: O(1)
 
-T_Total = T(búsquedas) + T(transacción)
-T_Total = O(1) + O(1)
+CuentaPremium.validarOperacion(monto):
+    - Comparación monto <= 0                            O(1)
+    - Comparación saldo < monto                         O(1)
+    Total: O(1)
 
-Aplicando la regla de la suma en el álgebra de órdenes, la combinación de múltiples complejidades constantes da como resultado un tiempo constante definitivo.
+CuentaPremium.validarDeposito(monto):
+    - Comparación monto <= 0                            O(1)
+    Total: O(1)
 
-Complejidad Final del Método: O(1)
-(El tiempo de ejecución de la transferencia es eficiente y completamente independiente de la cantidad total de usuarios o cuentas registradas en la plataforma, cumpliendo con los estándares de diseño óptimo exigidos).
+CuentaCorporativa.validarOperacion(monto):
+    - Comparación monto <= 0                            O(1)
+    - Comparación saldo < monto                         O(1)
+    Total: O(1)
+
+CuentaCorporativa.validarDeposito(monto):
+    - Comparación monto <= 0                            O(1)
+    Total: O(1)
+
+Cuenta.extraer(monto):
+    - Resta aritmética y asignación                     O(1)
+
+Cuenta.depositar(monto):
+    - Suma aritmética y asignación                      O(1)
+
+================================================================================
+Método bajo análisis: obtenerTotalInvertido
+================================================================================
+
+public double obtenerTotalInvertido(String dniUsuario) {
+    return obtenerUsuario(dniUsuario).obtenerTotalInvertido();  // O(1)
+}
+
+El acumulador totalInvertido en Usuario se actualiza al invertir (sumar),
+precancelar (restar) y vencer (restar). La consulta es acceso directo a un
+campo numérico.
+
+Complejidad: O(1)
+
+================================================================================
+Justificación paso a paso (Defensa para la Cátedra) — realizarTransferencia
+================================================================================
+
+A. Búsqueda de cuentas (buscarCuentaEnSistema):
+    Se recorre la colección de usuarios (U usuarios) y, en el peor caso, se
+    consulta el HashMap de cuentas de cada uno (C cuentas por usuario en promedio).
+    T(búsqueda) = O(U × C) por cada invocación.
+    Se invoca dos veces (origen y destino): O(2 × U × C) = O(U × C).
+
+B. Bloque transaccional (Cuenta.realizarTransferencia):
+    Todas las validaciones polimórficas, extracción, depósito e instanciación
+    ejecutan operaciones de costo constante O(1).
+    El registro en HashMap (cuenta origen, cuenta destino, registro global)
+    es O(1) por inserción.
+    T(transacción) = O(1)
+
+C. Generación de ID y fecha:
+    contadorTransferencias++ y Utilitarios.hoy(): O(1)
+
+================================================================================
+Conclusión — realizarTransferencia
+================================================================================
+
+T_Total = T(búsqueda origen) + T(búsqueda destino) + T(transacción)
+T_Total = O(U × C) + O(U × C) + O(1)
+T_Total = O(U × C)
+
+La operación de transferencia en sí (validar → crear → ejecutar) es O(1) una
+vez encontradas las cuentas. El costo total incluye la búsqueda lineal al haber
+eliminado el mapa global cuentasPorCvu de Billetera, delegando la resolución
+de CVU a recorrido sobre usuarios.
+
+Nota: Si U y C se consideran acotados por el dominio del problema (cantidad
+moderada de usuarios y cuentas), el comportamiento práctico sigue siendo
+eficiente para el TP.
+
+================================================================================
+Conclusión — obtenerTotalInvertido
+================================================================================
+
+Complejidad Final: O(1)
+(Cumple el requisito del punto 9: consulta del total invertido en tiempo
+constante gracias al acumulador en Usuario).

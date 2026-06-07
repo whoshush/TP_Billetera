@@ -7,14 +7,21 @@ public abstract class Inversion extends Operacion {
     protected int plazo;
     private String tipo;
     private boolean precancelada;
+    private boolean vencida;
     private Cuenta origen;
 
-    public Inversion(String id, double monto, String fecha, int plazo, String tipo, Cuenta origen) {
-        super(id, monto, fecha);
+    public Inversion(String id, double monto, String fecha, int plazo, String tipo, Cuenta origen, boolean aprobada) {
+        super(id, monto, fecha, aprobada);
         this.plazo = plazo;
         this.tipo = tipo;
         this.precancelada = false;
+        this.vencida = false;
         this.origen = origen;
+    }
+
+    @Override
+    public boolean esInversion() {
+        return true;
     }
 
     public void precancelar() {
@@ -23,6 +30,10 @@ public abstract class Inversion extends Operacion {
 
     public boolean esPrecancelado() {
         return precancelada;
+    }
+
+    public boolean esVencida() {
+        return vencida;
     }
 
     public boolean esPrecancelable() {
@@ -41,7 +52,7 @@ public abstract class Inversion extends Operacion {
         LocalDate fechaInicio = LocalDate.parse(getFecha());
         LocalDate hoy = Utilitarios.hoy();
         long dias = ChronoUnit.DAYS.between(fechaInicio, hoy);
-        
+
         if (dias > plazo) {
             dias = plazo;
         }
@@ -49,6 +60,57 @@ public abstract class Inversion extends Operacion {
     }
 
     public abstract double calcularResultado();
+
+    protected double aplicarFactorRentabilidadCuenta(double resultado) {
+        return resultado * origen.factorRentabilidadInversion();
+    }
+
+    public boolean venceHoy() {
+        if (precancelada || vencida) {
+            return false;
+        }
+        LocalDate fechaInicio = LocalDate.parse(getFecha());
+        return fechaInicio.plusDays(plazo).equals(Utilitarios.hoy());
+    }
+
+    @Override
+    public boolean intentarPrecancelar(Cuenta cuenta, Usuario titular) {
+        if (precancelada) {
+            throw new IllegalArgumentException("La inversión ya se encuentra precancelada.");
+        }
+        if (vencida) {
+            throw new IllegalArgumentException("La inversión ya venció.");
+        }
+        if (!esPrecancelable()) {
+            throw new IllegalArgumentException("La inversión no es precancelable.");
+        }
+        precancelarEn(cuenta, titular);
+        return true;
+    }
+
+    public void precancelarEn(Cuenta cuenta, Usuario titular) {
+        precancelar();
+        double gananciaFinal = calcularResultado();
+        cuenta.depositar(getMonto() + gananciaFinal);
+        titular.restarInvertido(getMonto());
+    }
+
+    public void procesarVencimiento(Cuenta cuenta, Usuario titular) {
+        if (precancelada || vencida) {
+            return;
+        }
+        vencida = true;
+        double ganancia = calcularResultado();
+        cuenta.depositar(getMonto() + ganancia);
+        titular.restarInvertido(getMonto());
+    }
+
+    @Override
+    public void intentarProcesarVencimientoHoy(Cuenta cuenta, Usuario titular) {
+        if (venceHoy()) {
+            procesarVencimiento(cuenta, titular);
+        }
+    }
 
     @Override
     public String obtenerTipo() {

@@ -4,8 +4,8 @@ public class Transferencia extends Operacion {
     private Cuenta origen;
     private Cuenta destino;
 
-    public Transferencia(String id, double monto, String fecha, Cuenta origen, Cuenta destino) {
-        super(id, monto, fecha);
+    public Transferencia(String id, double monto, String fecha, Cuenta origen, Cuenta destino, boolean aprobada) {
+        super(id, monto, fecha, aprobada);
         this.origen = origen;
         this.destino = destino;
     }
@@ -25,5 +25,10 @@ public class Transferencia extends Operacion {
           .append("monto: ").append(getMonto()).append("\n")
           .append(isAprobada() ? "[Aprobado]" : "[Rechazado]");
         return sb.toString();
+    }
+
+    @Override
+    public String toString() {
+        return obtenerDetalle();
     }
 }

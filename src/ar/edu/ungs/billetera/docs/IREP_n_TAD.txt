@@ -1,31 +1,65 @@
-ANÁLISIS DE INVARIANTES DE REPRESENTACIÓN (IREP)TAD Billetera (Sistema Central)PlaintextIREP(b: Billetera) : booleano
+ANÁLISIS DE INVARIANTES DE REPRESENTACIÓN (IREP)
+
+TAD Billetera (Sistema Central — Fachada)
+
+Plaintext
+IREP(b: Billetera) : booleano
 IREP(b) ≡
     b.usuarios ≠ null AND
     b.empresas ≠ null AND
-    b.operacionesGlobales ≠ null AND
-    b.cuentasPorCvu ≠ null AND
-    b.aliasACvu ≠ null AND
-    b.autorizadosPorEmpresa ≠ null AND
+    b.registroOperaciones ≠ null AND
     (∀ dni ∈ b.usuarios.keys() ⟹ b.usuarios.get(dni).getDni() == dni) AND
-    (∀ cuit ∈ b.empresas.keys() ⟹ b.empresas.get(cuit).getCuit() == cuit) AND
-    (∀ id ∈ b.operacionesGlobales.keys() ⟹ b.operacionesGlobales.get(id).getId() == id) AND
-    (∀ cvu ∈ b.cuentasPorCvu.keys() ⟹ b.cuentasPorCvu.get(cvu).getCvu() == cvu) AND
-    (∀ alias ∈ b.aliasACvu.keys() ⟹ b.cuentasPorCvu.containsKey(b.aliasACvu.get(alias)) AND b.cuentasPorCvu.get(b.aliasACvu.get(alias)).getAlias() == alias) AND
-    (∀ cuit ∈ b.autorizadosPorEmpresa.keys() ⟹ b.empresas.containsKey(cuit))
-Justificación:El sistema central es válido si la totalidad de sus diccionarios de datos y mapas de optimización estructural se encuentran inicializados. Cada clave de acceso (DNI, CUIT, ID de operación, CVU y Alias) debe coincidir estrictamente con el identificador interno del objeto guardado o resolver una relación de mapeo bidireccional válida entre las colecciones, garantizando búsquedas directas en $O(1)$ y manteniendo la integridad referencial del sistema.TAD UsuarioPlaintextIREP(u: Usuario) : booleano
+    (∀ cuit ∈ b.empresas.keys() ⟹ b.empresas.get(cuit).getCuit() == cuit)
+
+Justificación:
+La billetera actúa como fachada delgada: solo mantiene los diccionarios de usuarios y empresas, más una referencia al registro global de operaciones. La validación IREP de campos obligatorios se delega a los constructores de Usuario y Empresa; la billetera solo verifica duplicados antes de insertar.
+
+TAD RegistroOperaciones
+
+Plaintext
+IREP(r: RegistroOperaciones) : booleano
+IREP(r) ≡
+    r.operacionesGlobales ≠ null AND
+    r.contadorTransferencias ≥ 0 AND
+    r.contadorInversiones ≥ 0 AND
+    (∀ id ∈ r.operacionesGlobales.keys() ⟹ r.operacionesGlobales.get(id).getId() == id)
+
+Justificación:
+El registro global centraliza la generación de IDs y el historial del sistema. Cada operación indexada debe coincidir con su clave.
+
+TAD Usuario
+
+Plaintext
+IREP(u: Usuario) : booleano
 IREP(u) ≡
     u.dni ≠ null AND u.dni ≠ "" AND
     u.nombre ≠ null AND u.nombre ≠ "" AND
     u.telefono ≠ null AND u.telefono ≠ "" AND
     u.email ≠ null AND u.email ≠ "" AND
     u.cuentas ≠ null AND
+    u.totalInvertido ≥ 0 AND
     (∀ cvu ∈ u.cuentas.keys() ⟹ u.cuentas.get(cvu).getCvu() == cvu) AND
     (∀ cvu ∈ u.cuentas.keys() ⟹ u.cuentas.get(cvu).getDni() == u.dni)
-Justificación:Un usuario es consistente si presenta sus atributos identificatorios obligatorios definidos (incluyendo teléfono y correo electrónico) y su mapa de cuentas inicializado. Adicionalmente, se exige que la clave del diccionario coincida con el CVU de la cuenta asociada y que el DNI configurado en cada una de esas cuentas equivalga al DNI del usuario, asegurando que ninguna cuenta sea vinculada a un titular incorrecto.TAD EmpresaPlaintextIREP(e: Empresa) : booleano
+
+Justificación:
+Un usuario es consistente si presenta sus atributos identificatorios obligatorios definidos y su mapa de cuentas inicializado. El acumulador totalInvertido nunca puede ser negativo y se actualiza en O(1) al invertir, precancelar o vencer una inversión.
+
+TAD Empresa
+
+Plaintext
+IREP(e: Empresa) : booleano
 IREP(e) ≡
     e.cuit ≠ null AND e.cuit ≠ "" AND
-    e.razonSocial ≠ null AND e.razonSocial ≠ ""
-Justificación:Una instancia de Empresa es válida si sus atributos fundamentales e identificatorios obligatorios (CUIT y Razón Social / Nombre de Fantasía) están inicializados y contienen cadenas de caracteres no vacías.TAD Cuenta (Clase Abstracta)PlaintextIREP(c: Cuenta) : booleano
+    e.razonSocial ≠ null AND e.razonSocial ≠ "" AND
+    e.autorizados ≠ null
+
+Justificación:
+Una instancia de Empresa es válida si sus atributos fundamentales (CUIT y Razón Social) están inicializados y contienen cadenas no vacías, y su lista de personas autorizadas está instanciada.
+
+TAD Cuenta (Clase Abstracta)
+
+Plaintext
+IREP(c: Cuenta) : booleano
 IREP(c) ≡
     c.cvu ≠ null AND c.cvu ≠ "" AND
     c.alias ≠ null AND c.alias ≠ "" AND
@@ -33,42 +67,107 @@ IREP(c) ≡
     c.saldo ≥ 0 AND
     c.operaciones ≠ null AND
     (∀ id ∈ c.operaciones.keys() ⟹ c.operaciones.get(id).getId() == id)
-Justificación:Una cuenta es semánticamente válida si cuenta con un CVU, un alias y un DNI de titular inicializados y con contenido no vacío. El saldo no puede ser negativo debido a las restricciones operativas. Su colección de operaciones debe estar instanciada, verificando que todo el historial transaccional y de inversiones guardado se encuentre correctamente indexado bajo su correspondiente identificador único.TAD CuentaRegularPlaintextIREP(cr: CuentaRegular) : booleano
+
+Justificación:
+Una cuenta es semánticamente válida si cuenta con CVU, alias y DNI de titular no vacíos, saldo no negativo, y operaciones correctamente indexadas por ID.
+
+TAD CuentaRegular
+
+Plaintext
+IREP(cr: CuentaRegular) : booleano
 IREP(cr) ≡ IREP((Cuenta) cr)
-Justificación:Una cuenta regular hereda íntegramente las restricciones del tipo abstracto Cuenta, no incorporando atributos de estado adicionales que requieran restricciones particulares.TAD CuentaPremiumPlaintextIREP(cp: CuentaPremium) : booleano
+
+Justificación:
+Una cuenta regular hereda íntegramente las restricciones del tipo abstracto Cuenta. El límite de saldo de $5.000.000 se valida en validarDeposito() antes de acreditar fondos.
+
+TAD CuentaPremium
+
+Plaintext
+IREP(cp: CuentaPremium) : booleano
 IREP(cp) ≡ IREP((Cuenta) cp)
-Justificación:Una cuenta premium comparte el estado de la clase base Cuenta, por lo que su validez se determina por el cumplimiento del invariante general de las cuentas del sistema.TAD CuentaCorporativaPlaintextIREP(cc: CuentaCorporativa) : booleano
+
+Justificación:
+Una cuenta premium comparte el estado de la clase base Cuenta. El depósito inicial mínimo de $500.000 se valida al crear la cuenta.
+
+TAD CuentaCorporativa
+
+Plaintext
+IREP(cc: CuentaCorporativa) : booleano
 IREP(cc) ≡
     IREP((Cuenta) cc) AND
     cc.empresaAsociada ≠ null
-Justificación:Además de cumplir de forma mandatoria con las condiciones estipuladas para toda Cuenta, una cuenta corporativa requiere que su referencia a la entidad Empresa asociada nunca sea nula, asegurando el vínculo institucional de la cuenta.TAD Operacion (Clase Abstracta)PlaintextIREP(op: Operacion) : booleano
+
+Justificación:
+Además de cumplir con las condiciones de Cuenta, una cuenta corporativa requiere referencia no nula a la Empresa asociada.
+
+TAD Operacion (Clase Abstracta)
+
+Plaintext
+IREP(op: Operacion) : booleano
 IREP(op) ≡
     op.id ≠ null AND op.id ≠ "" AND
     op.fecha ≠ null AND op.fecha ≠ "" AND
     op.monto > 0
-Justificación:Toda operación registrada en la plataforma debe poseer un identificador único no vacío, una fecha de registro válida y un monto estrictamente positivo para ser considerada consistente.TAD TransferenciaPlaintextIREP(t: Transferencia) : booleano
+
+Justificación:
+Toda operación debe poseer identificador, fecha y monto estrictamente positivo. El estado aprobada se fija en el constructor (sin setter).
+
+TAD Transferencia
+
+Plaintext
+IREP(t: Transferencia) : booleano
 IREP(t) ≡
     IREP((Operacion) t) AND
     t.origen ≠ null AND
     t.destino ≠ null AND
     t.origen ≠ t.destino
-Justificación:Una transferencia es válida si cumple con las restricciones de Operacion, cuenta con referencias inicializadas y no nulas para las cuentas de origen y destino, y restringe la posibilidad de que la cuenta de origen sea idéntica a la de destino.TAD Inversion (Clase Abstracta)PlaintextIREP(i: Inversion) : booleano
+
+Justificación:
+Una transferencia es válida si cumple con Operacion, tiene cuentas de origen y destino no nulas y distintas.
+
+TAD Inversion (Clase Abstracta)
+
+Plaintext
+IREP(i: Inversion) : booleano
 IREP(i) ≡
     IREP((Operacion) i) AND
     i.plazo > 0 AND
     i.tipo ≠ null AND i.tipo ≠ "" AND
     i.origen ≠ null
-Justificación:Una inversión mantiene la validez de Operacion si su plazo en días es un entero estrictamente mayor a cero, su tipo descriptivo está correctamente definido y guarda una referencia directa y no nula a la cuenta origen que financió el capital.TAD RentaFijaPlaintextIREP(rf: RentaFija) : booleano
+
+Justificación:
+Una inversión mantiene la validez de Operacion si su plazo es positivo, su tipo está definido y guarda referencia a la cuenta origen.
+
+TAD RentaFija
+
+Plaintext
+IREP(rf: RentaFija) : booleano
 IREP(rf) ≡
     IREP((Inversion) rf) AND
     rf.tasaInteres > 0
-Justificación:Complementando al tipo Inversion, una inversión de renta fija exige una tasa de interés configurada con un valor real positivo para posibilitar el cálculo matemático del rendimiento estipulado.TAD DivisaPlaintextIREP(d: Divisa) : booleano
+
+Justificación:
+Complementando al tipo Inversion, una inversión de renta fija exige tasa de interés positiva.
+
+TAD Divisa
+
+Plaintext
+IREP(d: Divisa) : booleano
 IREP(d) ≡
     IREP((Inversion) d) AND
     d.monedaReferencia ≠ null AND d.monedaReferencia ≠ "" AND
     d.tasa > 0
-Justificación:El tipo Divisa es consistente si cumple con el invariante de Inversion, tiene asignado un identificador de moneda extranjera de referencia no vacío y define una tasa de rendimiento nominal positiva.TAD FondoEmpresarialPlaintextIREP(fe: FondoEmpresarial) : booleano
+
+Justificación:
+El tipo Divisa es consistente si cumple con Inversion, tiene moneda de referencia no vacía y tasa positiva.
+
+TAD FondoEmpresarial
+
+Plaintext
+IREP(fe: FondoEmpresarial) : booleano
 IREP(fe) ≡
     IREP((Inversion) fe) AND
     fe.precancelada == false
-Justificación:Al heredar de Inversion, un fondo empresarial es consistente si cumple sus condiciones base y restringe su estado interno manteniendo el indicador de precancelación estrictamente en falso, en concordancia con la imposibilidad operativa de ser cancelado anticipadamente.
+
+Justificación:
+Un fondo empresarial es consistente si cumple las condiciones base de Inversion y mantiene el indicador de precancelación en falso (no es precancelable).

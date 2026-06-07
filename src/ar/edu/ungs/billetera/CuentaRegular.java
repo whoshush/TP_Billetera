@@ -17,10 +17,22 @@ public class CuentaRegular extends Cuenta {
     }
 
     @Override
-    public void depositar(double monto) {
+    public void validarDeposito(double monto) {
+        if (monto <= 0) {
+            throw new IllegalArgumentException("El monto debe ser mayor a cero.");
+        }
         if (this.saldo + monto > 5000000) {
             throw new IllegalStateException("El saldo de la cuenta regular no puede superar los $5.000.000.");
         }
-        super.depositar(monto);
+    }
+
+    @Override
+    public String obtenerTipoCuenta() {
+        return "Regular";
+    }
+
+    @Override
+    public String toString() {
+        return "Cuenta Regular: " + obtenerDetalle();
     }
 }
