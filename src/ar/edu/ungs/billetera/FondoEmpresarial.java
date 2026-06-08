@@ -7,6 +7,9 @@ public class FondoEmpresarial extends Inversion {
 
     public FondoEmpresarial(String id, double monto, String fecha, int plazo, String tipo, Cuenta origen, boolean aprobada) {
         super(id, monto, fecha, plazo, tipo, origen, aprobada);
+        if (monto < 20000000) {
+            throw new IllegalArgumentException("El Fondo de Liquidez requiere un monto mínimo de $20.000.000.");
+        }
         this.cotizacionFLE = Utilitarios.consultarCotizacion(ACTIVO_FLE);
     }
 

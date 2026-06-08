@@ -110,7 +110,7 @@ public class Billetera implements IBilletera {
             String idOperacion = registroOperaciones.generarIdInversion();
             String fecha = Utilitarios.hoy().toString();
             int idNumerico = cuenta.realizarInversionRentaFija(monto, plazoDias, 0.20, idOperacion, fecha);
-            registroOperaciones.registrar(cuenta.getOperaciones().get(idOperacion));
+            registroOperaciones.registrar(cuenta.obtenerOperacion(idOperacion));
             usuario.sumarInvertido(monto);
             return idNumerico;
         } catch (Exception e) {
@@ -129,7 +129,7 @@ public class Billetera implements IBilletera {
             String idOperacion = registroOperaciones.generarIdInversion();
             String fecha = Utilitarios.hoy().toString();
             int idNumerico = cuenta.realizarInversionDivisa(monto, plazoDias, divisa, tasa, idOperacion, fecha);
-            registroOperaciones.registrar(cuenta.getOperaciones().get(idOperacion));
+            registroOperaciones.registrar(cuenta.obtenerOperacion(idOperacion));
             usuario.sumarInvertido(monto);
             return idNumerico;
         } catch (Exception e) {
@@ -142,9 +142,6 @@ public class Billetera implements IBilletera {
         if (plazoDias <= 0) {
             throw new IllegalArgumentException("El plazo debe ser mayor a cero.");
         }
-        if (monto < 20000000) {
-            throw new IllegalArgumentException("El Fondo de Liquidez requiere un monto mínimo de $20.000.000.");
-        }
 
         Usuario usuario = obtenerUsuario(dni);
         Cuenta cuenta = validarCuentaDeUsuario(usuario, cvu);
@@ -156,7 +153,7 @@ public class Billetera implements IBilletera {
             String idOperacion = registroOperaciones.generarIdInversion();
             String fecha = Utilitarios.hoy().toString();
             int idNumerico = cuenta.realizarInversionLiquidez(monto, plazoDias, idOperacion, fecha);
-            registroOperaciones.registrar(cuenta.getOperaciones().get(idOperacion));
+            registroOperaciones.registrar(cuenta.obtenerOperacion(idOperacion));
             usuario.sumarInvertido(monto);
             return idNumerico;
         } catch (Exception e) {

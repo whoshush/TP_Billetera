@@ -5,6 +5,9 @@ public class RentaFija extends Inversion {
 
     public RentaFija(String id, double monto, String fecha, int plazo, String tipo, double tasaInteres, Cuenta origen, boolean aprobada) {
         super(id, monto, fecha, plazo, tipo, origen, aprobada);
+        if (tasaInteres <= 0) {
+            throw new IllegalArgumentException("La tasa debe ser positiva.");
+        }
         this.tasaInteres = tasaInteres;
     }
 

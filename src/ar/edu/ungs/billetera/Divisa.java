@@ -7,9 +7,16 @@ public class Divisa extends Inversion {
 
     public Divisa(String id, double monto, String fecha, int plazo, String tipo, String monedaReferencia, double tasa, Cuenta origen, boolean aprobada) {
         super(id, monto, fecha, plazo, tipo, origen, aprobada);
+        if (monedaReferencia == null || monedaReferencia.trim().isEmpty()) {
+            throw new IllegalArgumentException("La moneda de referencia es obligatoria.");
+        }
+        if (tasa <= 0) {
+        	throw new IllegalArgumentException("La tasa debe ser positiva.");
+        }
         this.monedaReferencia = monedaReferencia;
         this.tasa = tasa;
         this.cotizacionInicial = Utilitarios.consultarCotizacion(monedaReferencia);
+        
     }
 
     @Override

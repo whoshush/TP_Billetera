@@ -80,27 +80,33 @@ public abstract class Cuenta {
     }
 
     public void realizarTransferencia(Cuenta destino, double monto, String id, String fecha, RegistroOperaciones registro) {
-        Transferencia transf = new Transferencia(id, monto, fecha, this, destino, false);
-        try {
-            validarOperacion(monto);
-            destino.validarDeposito(monto);
-            extraer(monto);
-            destino.depositar(monto);
-            transf = new Transferencia(id, monto, fecha, this, destino, true);
-        } catch (IllegalStateException e) {
-            registrarOperacion(transf);
-            destino.registrarOperacion(transf);
-            registro.registrar(transf);
-            throw e;
-        } catch (Exception e) {
-            registrarOperacion(transf);
-            destino.registrarOperacion(transf);
-            registro.registrar(transf);
-            throw new IllegalArgumentException(e.getMessage());
-        }
-        registrarOperacion(transf);
-        destino.registrarOperacion(transf);
-        registro.registrar(transf);
+    	try {
+    	    validarOperacion(monto);
+    	    destino.validarDeposito(monto);
+
+    	    extraer(monto);
+    	    destino.depositar(monto);
+
+    	    Transferencia transf =
+    	        new Transferencia(id, monto, fecha,
+    	                          this, destino, true);
+
+    	    registrarOperacion(transf);
+    	    destino.registrarOperacion(transf);
+    	    registro.registrar(transf);
+
+    	} catch (Exception e) {
+
+    	    Transferencia transf =
+    	        new Transferencia(id, monto, fecha,
+    	                          this, destino, false);
+
+    	    registrarOperacion(transf);
+    	    destino.registrarOperacion(transf);
+    	    registro.registrar(transf);
+
+    	    throw new IllegalArgumentException(e.getMessage());
+    	}
     }
 
     public int realizarInversionRentaFija(double monto, int plazoDias, double tasa, String id, String fecha) throws Exception {
@@ -173,6 +179,9 @@ public abstract class Cuenta {
           .append(" | Alias: ").append(alias)
           .append(" | Saldo: $").append(saldo);
         return sb.toString();
+    }
+    public Operacion obtenerOperacion(String id) {
+        return operaciones.get(id);
     }
 
     @Override
