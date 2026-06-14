@@ -12,6 +12,17 @@ public abstract class Inversion extends Operacion {
 
     public Inversion(String id, double monto, String fecha, int plazo, String tipo, Cuenta origen, boolean aprobada) {
         super(id, monto, fecha, aprobada);
+        if (plazo <= 0) {
+            throw new IllegalArgumentException("El plazo debe ser positivo.");
+        }
+
+        if (tipo == null || tipo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El tipo de inversión es obligatorio.");
+        }
+
+        if (origen == null) {
+            throw new IllegalArgumentException("La cuenta origen es obligatoria.");
+        }
         this.plazo = plazo;
         this.tipo = tipo;
         this.precancelada = false;

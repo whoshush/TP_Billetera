@@ -6,6 +6,9 @@ public class Transferencia extends Operacion {
 
     public Transferencia(String id, double monto, String fecha, Cuenta origen, Cuenta destino, boolean aprobada) {
         super(id, monto, fecha, aprobada);
+        if (origen == null || destino == null) {
+            throw new IllegalArgumentException("Las cuentas origen y destino son obligatorias.");
+        }
         this.origen = origen;
         this.destino = destino;
     }
