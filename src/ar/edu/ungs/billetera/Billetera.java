@@ -94,9 +94,8 @@ public class Billetera implements IBilletera {
             throw new IllegalArgumentException("La cuenta de origen o destino no existe.");
         }
 
-        String idOperacion = registroOperaciones.generarIdTransferencia();
         String fechaActual = Utilitarios.hoy().toString();
-        origen.realizarTransferencia(destino, monto, idOperacion, fechaActual, registroOperaciones);
+        origen.realizarTransferencia(destino, monto, fechaActual, registroOperaciones);
     }
 
     @Override
@@ -107,10 +106,9 @@ public class Billetera implements IBilletera {
         Usuario usuario = obtenerUsuario(dni);
         Cuenta cuenta = validarCuentaDeUsuario(usuario, cvu);
         try {
-            String idOperacion = registroOperaciones.generarIdInversion();
             String fecha = Utilitarios.hoy().toString();
-            int idNumerico = cuenta.realizarInversionRentaFija(monto, plazoDias, 0.20, idOperacion, fecha);
-            registroOperaciones.registrar(cuenta.obtenerOperacion(idOperacion));
+            int idNumerico = cuenta.realizarInversionRentaFija(monto, plazoDias, 0.20, fecha);
+            registroOperaciones.registrar(cuenta.obtenerOperacion(String.valueOf(idNumerico)));
             usuario.sumarInvertido(monto);
             return idNumerico;
         } catch (Exception e) {
@@ -126,10 +124,9 @@ public class Billetera implements IBilletera {
         Usuario usuario = obtenerUsuario(dni);
         Cuenta cuenta = validarCuentaDeUsuario(usuario, cvu);
         try {
-            String idOperacion = registroOperaciones.generarIdInversion();
             String fecha = Utilitarios.hoy().toString();
-            int idNumerico = cuenta.realizarInversionDivisa(monto, plazoDias, divisa, tasa, idOperacion, fecha);
-            registroOperaciones.registrar(cuenta.obtenerOperacion(idOperacion));
+            int idNumerico = cuenta.realizarInversionDivisa(monto, plazoDias, divisa, tasa, fecha);
+            registroOperaciones.registrar(cuenta.obtenerOperacion(String.valueOf(idNumerico)));
             usuario.sumarInvertido(monto);
             return idNumerico;
         } catch (Exception e) {
@@ -150,10 +147,9 @@ public class Billetera implements IBilletera {
         }
 
         try {
-            String idOperacion = registroOperaciones.generarIdInversion();
             String fecha = Utilitarios.hoy().toString();
-            int idNumerico = cuenta.realizarInversionLiquidez(monto, plazoDias, idOperacion, fecha);
-            registroOperaciones.registrar(cuenta.obtenerOperacion(idOperacion));
+            int idNumerico = cuenta.realizarInversionLiquidez(monto, plazoDias, fecha);
+            registroOperaciones.registrar(cuenta.obtenerOperacion(String.valueOf(idNumerico)));
             usuario.sumarInvertido(monto);
             return idNumerico;
         } catch (Exception e) {
@@ -242,11 +238,7 @@ public class Billetera implements IBilletera {
     @Override
     public void procesarInversionesQueVencenHoy() {
         for (Usuario usuario : usuarios.values()) {
-            for (Cuenta cuenta : usuario.getCuentas().values()) {
-                for (Operacion op : cuenta.getOperaciones().values()) {
-                    op.intentarProcesarVencimientoHoy(cuenta, usuario);
-                }
-            }
+            usuario.procesarInversionesQueVencenHoy();
         }
     }
 

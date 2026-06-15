@@ -244,3 +244,49 @@ Documentación de **todo lo modificado** desde el inicio de la refactorización 
 | `Principal.java` | Sin cambios |
 | `BilleteraTest.java` | Sin cambios |
 | `Utilitarios.java` | Sin cambios |
+
+
+
+-----------------
+
+
+las dos correcciones del profesor y el ajuste manual de excepciones. Resumen:
+
+## 1. IDs autogenerados por cada clase
+
+**`Transferencia`**: contador estático propio y método `generarSiguienteId()` que devuelve `"TR-1"`, `"TR-2"`, etc.
+
+**`Inversion`**: contador estático compartido por todas las subclases (`RentaFija`, `Divisa`, `FondoEmpresarial`) con `generarSiguienteId()` que devuelve `"1"`, `"2"`, etc.
+
+**`RegistroOperaciones`**: se eliminaron `contadorTransferencias`, `contadorInversiones`, `generarIdTransferencia()` y `generarIdInversion()`. Solo registra operaciones.
+
+**Flujo actualizado**:
+- `Cuenta.realizarTransferencia()` reserva el ID una vez con `Transferencia.generarSiguienteId()` (mismo ID en aprobada y rechazada).
+- Las inversiones generan su ID en el constructor de cada subclase vía `super(generarSiguienteId(), ...)`.
+- `Billetera` ya no genera IDs; delega en las clases de operación.
+
+## 2. Tell, Don't Ask — delegación de bucles
+
+Antes, `Billetera.procesarInversionesQueVencenHoy()` tenía tres bucles anidados. Ahora:
+
+- **`Billetera`** → itera usuarios y delega.
+- **`Usuario.procesarInversionesQueVencenHoy()`** → itera cuentas y delega.
+- **`Cuenta.procesarInversionesQueVencenHoy(Usuario)`** → itera operaciones y delega a `intentarProcesarVencimientoHoy()`.
+
+La lógica de vencimiento sigue en `Inversion`; solo se movió la iteración a las clases internas.
+
+## Tests
+
+Compilé y ejecuté `BilleteraTest`: **16/16 pasan** (los 15 originales obligatorios + 1 test agregado para el Bonus Track). El test que fallaba (`testLimiteCuentaRegular`) fue solucionado agregando un bloque `catch (IllegalStateException e)` en `Cuenta.realizarTransferencia()` para re-lanzar la excepción original sin envolverla, permitiendo que la prueba de la cátedra pase en verde.
+
+## Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `Transferencia.java` | Contador estático + `generarSiguienteId()` |
+| `Inversion.java` | Contador estático + `generarSiguienteId()` |
+| `RentaFija.java`, `Divisa.java`, `FondoEmpresarial.java` | Constructores sin parámetro `id` |
+| `Cuenta.java` | IDs delegados; `procesarInversionesQueVencenHoy()`; Fix del catch para `IllegalStateException` |
+| `Usuario.java` | `procesarInversionesQueVencenHoy()` |
+| `Billetera.java` | Sin generación de IDs; delegación de vencimientos |
+| `RegistroOperaciones.java` | Eliminados contadores y generadores de ID |

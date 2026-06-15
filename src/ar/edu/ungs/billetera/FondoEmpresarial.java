@@ -5,8 +5,8 @@ public class FondoEmpresarial extends Inversion {
     private static final double TASA_BASE = 0.08;
     private double cotizacionFLE;
 
-    public FondoEmpresarial(String id, double monto, String fecha, int plazo, String tipo, Cuenta origen, boolean aprobada) {
-        super(id, monto, fecha, plazo, tipo, origen, aprobada);
+    public FondoEmpresarial(double monto, String fecha, int plazo, String tipo, Cuenta origen, boolean aprobada) {
+        super(generarSiguienteId(), monto, fecha, plazo, tipo, origen, aprobada);
         if (monto < 20000000) {
             throw new IllegalArgumentException("El Fondo de Liquidez requiere un monto mínimo de $20.000.000.");
         }

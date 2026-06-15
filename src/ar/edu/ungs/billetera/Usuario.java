@@ -114,6 +114,12 @@ public class Usuario {
         return historial;
     }
 
+    public void procesarInversionesQueVencenHoy() {
+        for (Cuenta cuenta : cuentas.values()) {
+            cuenta.procesarInversionesQueVencenHoy(this);
+        }
+    }
+
     public String crearCuentaRegular(String alias) {
         String cvu = Utilitarios.generarSiguienteCvu();
         CuentaRegular cuenta = new CuentaRegular(cvu, alias, dni);

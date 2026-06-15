@@ -79,58 +79,77 @@ public abstract class Cuenta {
         return 1.0;
     }
 
-    public void realizarTransferencia(Cuenta destino, double monto, String id, String fecha, RegistroOperaciones registro) {
-    	try {
-    	    validarOperacion(monto);
-    	    destino.validarDeposito(monto);
+public void realizarTransferencia(Cuenta destino, double monto, String fecha, RegistroOperaciones registro) {
+        String id = Transferencia.generarSiguienteId();
+        try {
+            validarOperacion(monto);
+            destino.validarDeposito(monto);
 
-    	    extraer(monto);
-    	    destino.depositar(monto);
+            extraer(monto);
+            destino.depositar(monto);
 
-    	    Transferencia transf =
-    	        new Transferencia(id, monto, fecha,
-    	                          this, destino, true);
+            Transferencia transf =
+                new Transferencia(id, monto, fecha,
+                                  this, destino, true);
 
-    	    registrarOperacion(transf);
-    	    destino.registrarOperacion(transf);
-    	    registro.registrar(transf);
+            registrarOperacion(transf);
+            destino.registrarOperacion(transf);
+            registro.registrar(transf);
 
-    	} catch (Exception e) {
+        } catch (IllegalStateException e) {
+            // Captura el límite de la Cuenta Regular, la registra como rechazada y relanza el error original
+            Transferencia transf =
+                new Transferencia(id, monto, fecha,
+                                  this, destino, false);
 
-    	    Transferencia transf =
-    	        new Transferencia(id, monto, fecha,
-    	                          this, destino, false);
+            registrarOperacion(transf);
+            destino.registrarOperacion(transf);
+            registro.registrar(transf);
 
-    	    registrarOperacion(transf);
-    	    destino.registrarOperacion(transf);
-    	    registro.registrar(transf);
+            throw e;
 
-    	    throw new IllegalArgumentException(e.getMessage());
-    	}
+        } catch (Exception e) {
+            // Captura el resto de los errores (como saldo insuficiente) y los envuelve en IllegalArgumentException
+            Transferencia transf =
+                new Transferencia(id, monto, fecha,
+                                  this, destino, false);
+
+            registrarOperacion(transf);
+            destino.registrarOperacion(transf);
+            registro.registrar(transf);
+
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
-    public int realizarInversionRentaFija(double monto, int plazoDias, double tasa, String id, String fecha) throws Exception {
+    public int realizarInversionRentaFija(double monto, int plazoDias, double tasa, String fecha) throws Exception {
         validarOperacionInversion(monto);
         extraer(monto);
-        RentaFija inv = new RentaFija(id, monto, fecha, plazoDias, "Renta Fija", tasa, this, true);
+        RentaFija inv = new RentaFija(monto, fecha, plazoDias, "Renta Fija", tasa, this, true);
         registrarOperacion(inv);
-        return Integer.parseInt(id);
+        return Integer.parseInt(inv.getId());
     }
 
-    public int realizarInversionDivisa(double monto, int plazoDias, String divisa, double tasa, String id, String fecha) throws Exception {
+    public int realizarInversionDivisa(double monto, int plazoDias, String divisa, double tasa, String fecha) throws Exception {
         validarOperacionInversion(monto);
         extraer(monto);
-        Divisa inv = new Divisa(id, monto, fecha, plazoDias, "Divisa", divisa, tasa, this, true);
+        Divisa inv = new Divisa(monto, fecha, plazoDias, "Divisa", divisa, tasa, this, true);
         registrarOperacion(inv);
-        return Integer.parseInt(id);
+        return Integer.parseInt(inv.getId());
     }
 
-    public int realizarInversionLiquidez(double monto, int plazoDias, String id, String fecha) throws Exception {
+    public int realizarInversionLiquidez(double monto, int plazoDias, String fecha) throws Exception {
         validarOperacionInversion(monto);
         extraer(monto);
-        FondoEmpresarial inv = new FondoEmpresarial(id, monto, fecha, plazoDias, "Liquidez", this, true);
+        FondoEmpresarial inv = new FondoEmpresarial(monto, fecha, plazoDias, "Liquidez", this, true);
         registrarOperacion(inv);
-        return Integer.parseInt(id);
+        return Integer.parseInt(inv.getId());
+    }
+
+    public void procesarInversionesQueVencenHoy(Usuario titular) {
+        for (Operacion op : operaciones.values()) {
+            op.intentarProcesarVencimientoHoy(this, titular);
+        }
     }
 
     public void precancelarInversion(String id, Usuario titular) {

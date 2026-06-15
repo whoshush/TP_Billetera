@@ -1,8 +1,15 @@
 package ar.edu.ungs.billetera;
 
 public class Transferencia extends Operacion {
+    private static int contadorId = 0;
+
     private Cuenta origen;
     private Cuenta destino;
+
+    public static String generarSiguienteId() {
+        contadorId++;
+        return "TR-" + contadorId;
+    }
 
     public Transferencia(String id, double monto, String fecha, Cuenta origen, Cuenta destino, boolean aprobada) {
         super(id, monto, fecha, aprobada);

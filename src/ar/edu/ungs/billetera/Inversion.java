@@ -4,11 +4,18 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 public abstract class Inversion extends Operacion {
+    private static int contadorId = 0;
+
     protected int plazo;
     private String tipo;
     private boolean precancelada;
     private boolean vencida;
     private Cuenta origen;
+
+    protected static String generarSiguienteId() {
+        contadorId++;
+        return String.valueOf(contadorId);
+    }
 
     public Inversion(String id, double monto, String fecha, int plazo, String tipo, Cuenta origen, boolean aprobada) {
         super(id, monto, fecha, aprobada);

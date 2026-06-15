@@ -8,23 +8,9 @@ import java.util.Map;
 
 public class RegistroOperaciones {
     private Map<String, Operacion> operacionesGlobales;
-    private int contadorTransferencias;
-    private int contadorInversiones;
 
     public RegistroOperaciones() {
         this.operacionesGlobales = new HashMap<>();
-        this.contadorTransferencias = 0;
-        this.contadorInversiones = 0;
-    }
-
-    public String generarIdTransferencia() {
-        contadorTransferencias++;
-        return "TR-" + contadorTransferencias;
-    }
-
-    public String generarIdInversion() {
-        contadorInversiones++;
-        return String.valueOf(contadorInversiones);
     }
 
     public void registrar(Operacion operacion) {
