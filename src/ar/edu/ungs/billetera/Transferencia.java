@@ -6,13 +6,13 @@ public class Transferencia extends Operacion {
     private Cuenta origen;
     private Cuenta destino;
 
-    public static String generarSiguienteId() {
+    private static String generarSiguienteId() {
         contadorId++;
         return "TR-" + contadorId;
     }
 
-    public Transferencia(String id, double monto, String fecha, Cuenta origen, Cuenta destino, boolean aprobada) {
-        super(id, monto, fecha, aprobada);
+    public Transferencia(double monto, String fecha, Cuenta origen, Cuenta destino, boolean aprobada) {
+        super(generarSiguienteId(), monto, fecha, aprobada);
         if (origen == null || destino == null) {
             throw new IllegalArgumentException("Las cuentas origen y destino son obligatorias.");
         }

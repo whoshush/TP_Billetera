@@ -6,7 +6,7 @@ public class Divisa extends Inversion {
     private double cotizacionInicial;
 
     public Divisa(double monto, String fecha, int plazo, String tipo, String monedaReferencia, double tasa, Cuenta origen, boolean aprobada) {
-        super(generarSiguienteId(), monto, fecha, plazo, tipo, origen, aprobada);
+        super( monto, fecha, plazo, tipo, origen, aprobada);
         if (monedaReferencia == null || monedaReferencia.trim().isEmpty()) {
             throw new IllegalArgumentException("La moneda de referencia es obligatoria.");
         }

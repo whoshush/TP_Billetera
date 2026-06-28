@@ -12,13 +12,9 @@ public abstract class Inversion extends Operacion {
     private boolean vencida;
     private Cuenta origen;
 
-    protected static String generarSiguienteId() {
-        contadorId++;
-        return String.valueOf(contadorId);
-    }
 
-    public Inversion(String id, double monto, String fecha, int plazo, String tipo, Cuenta origen, boolean aprobada) {
-        super(id, monto, fecha, aprobada);
+    public Inversion(double monto, String fecha, int plazo, String tipo, Cuenta origen, boolean aprobada) {
+        super(generarSiguienteId(), monto, fecha, aprobada);
         if (plazo <= 0) {
             throw new IllegalArgumentException("El plazo debe ser positivo.");
         }
@@ -35,6 +31,10 @@ public abstract class Inversion extends Operacion {
         this.precancelada = false;
         this.vencida = false;
         this.origen = origen;
+    }
+    private static String generarSiguienteId() {
+        contadorId++;
+        return String.valueOf(contadorId);
     }
 
     @Override

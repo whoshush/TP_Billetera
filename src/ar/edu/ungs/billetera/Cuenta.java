@@ -80,7 +80,7 @@ public abstract class Cuenta {
     }
 
 public void realizarTransferencia(Cuenta destino, double monto, String fecha, RegistroOperaciones registro) {
-        String id = Transferencia.generarSiguienteId();
+      
         try {
             validarOperacion(monto);
             destino.validarDeposito(monto);
@@ -89,7 +89,7 @@ public void realizarTransferencia(Cuenta destino, double monto, String fecha, Re
             destino.depositar(monto);
 
             Transferencia transf =
-                new Transferencia(id, monto, fecha,
+                new Transferencia(monto, fecha,
                                   this, destino, true);
 
             registrarOperacion(transf);
@@ -99,7 +99,7 @@ public void realizarTransferencia(Cuenta destino, double monto, String fecha, Re
         } catch (IllegalStateException e) {
             // Captura el límite de la Cuenta Regular, la registra como rechazada y relanza el error original
             Transferencia transf =
-                new Transferencia(id, monto, fecha,
+                new Transferencia(monto, fecha,
                                   this, destino, false);
 
             registrarOperacion(transf);
@@ -111,7 +111,7 @@ public void realizarTransferencia(Cuenta destino, double monto, String fecha, Re
         } catch (Exception e) {
             // Captura el resto de los errores (como saldo insuficiente) y los envuelve en IllegalArgumentException
             Transferencia transf =
-                new Transferencia(id, monto, fecha,
+                new Transferencia(monto, fecha,
                                   this, destino, false);
 
             registrarOperacion(transf);
